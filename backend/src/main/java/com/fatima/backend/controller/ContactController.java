@@ -47,7 +47,6 @@ public class ContactController {
         );
     }
 
-    // ✅ FIXED: DTO used instead of Entity
     @PostMapping
     public ResponseEntity<Contact> createContact(
             @AuthenticationPrincipal UserDetails userDetails,
@@ -55,13 +54,14 @@ public class ContactController {
 
         Contact contact = new Contact();
         contact.setFirstName(dto.getFirstName());
+        contact.setLastName(dto.getLastName());  // ✅ fixed
+        contact.setTitle(dto.getTitle());         // ✅ fixed
 
         return ResponseEntity.ok(
                 contactService.createContact(userDetails.getUsername(), contact)
         );
     }
 
-    // ✅ FIXED: DTO used
     @PutMapping("/{id}")
     public ResponseEntity<Contact> updateContact(
             @AuthenticationPrincipal UserDetails userDetails,
@@ -70,6 +70,8 @@ public class ContactController {
 
         Contact contact = new Contact();
         contact.setFirstName(dto.getFirstName());
+        contact.setLastName(dto.getLastName());  // ✅ fixed
+        contact.setTitle(dto.getTitle());         // ✅ fixed
 
         return ResponseEntity.ok(
                 contactService.updateContact(userDetails.getUsername(), id, contact)
