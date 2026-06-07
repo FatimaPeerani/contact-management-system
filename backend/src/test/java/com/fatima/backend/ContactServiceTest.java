@@ -1,9 +1,7 @@
 package com.fatima.backend;
 
 import com.fatima.backend.model.Contact;
-import com.fatima.backend.model.User;
 import com.fatima.backend.repository.ContactRepository;
-import com.fatima.backend.repository.UserRepository;
 import com.fatima.backend.service.ContactService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -15,78 +13,85 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 
 import java.util.List;
-import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-public class ContactServiceTest {
+class ContactServiceTest {
 
     @Mock
     private ContactRepository contactRepository;
-
-    @Mock
-    private UserRepository userRepository;
 
     @InjectMocks
     private ContactService contactService;
 
     @Test
     void testGetAllContacts() {
-        User user = new User();
-        user.setId(1L);
-        user.setEmail("fatima@test.com");
-
         Contact contact = new Contact();
+        contact.setId(1L);
         contact.setFirstName("Ali");
-        contact.setLastName("Khan");
 
         Page<Contact> page = new PageImpl<>(List.of(contact));
+        PageRequest pageRequest = PageRequest.of(0, 10);
 
-        when(userRepository.findByEmail(any())).thenReturn(Optional.of(user));
-        when(contactRepository.findByUserId(any(), any())).thenReturn(page);
+        when(contactRepository.findAll(pageRequest)).thenReturn(page);
 
-        Page<Contact> result = contactService.getAllContacts("fatima@test.com", PageRequest.of(0, 10));
+        Page<Contact> result = contactService.getAllContacts("test@mail.com", pageRequest);
 
         assertNotNull(result);
         assertEquals(1, result.getTotalElements());
+        verify(contactRepository, times(1)).findAll(pageRequest);
     }
 
     @Test
     void testCreateContact() {
-        User user = new User();
-        user.setId(1L);
-        user.setEmail("fatima@test.com");
-
         Contact contact = new Contact();
         contact.setFirstName("Sara");
-        contact.setLastName("Ahmed");
 
-        when(userRepository.findByEmail(any())).thenReturn(Optional.of(user));
-        when(contactRepository.save(any())).thenReturn(contact);
+        when(contactRepository.save(any(Contact.class))).thenReturn(contact);
 
-        Contact result = contactService.createContact("fatima@test.com", contact);
+        Contact result = contactService.createContact("test@mail.com", contact);
 
         assertNotNull(result);
         assertEquals("Sara", result.getFirstName());
-        verify(contactRepository, times(1)).save(any());
+        verify(contactRepository, times(1)).save(any(Contact.class));
+    }
+
+    @Test
+    void testUpdateContact() {
+        Contact contact = new Contact();
+        contact.setFirstName("Updated");
+
+        when(contactRepository.save(any(Contact.class))).thenReturn(contact);
+
+        Contact result = contactService.updateContact("test@mail.com", 1L, contact);
+
+        assertNotNull(result);
+        assertEquals(1L, contact.getId());
+        verify(contactRepository, times(1)).save(contact);
     }
 
     @Test
     void testDeleteContact() {
-        User user = new User();
-        user.setEmail("fatima@test.com");
+        doNothing().when(contactRepository).deleteById(1L);
 
-        Contact contact = new Contact();
-        contact.setId(1L);
-        contact.setUser(user);
+        contactService.deleteContact("test@mail.com", 1L);
 
-        when(contactRepository.findById(1L)).thenReturn(Optional.of(contact));
+        verify(contactRepository, times(1)).deleteById(1L);
+    }
 
-        contactService.deleteContact("fatima@test.com", 1L);
+    @Test
+    void testSearchContacts() {
+        Page<Contact> page = new PageImpl<>(List.of(new Contact()));
+        PageRequest pageRequest = PageRequest.of(0, 10);
 
-        verify(contactRepository, times(1)).delete(contact);
+        when(contactRepository.findAll(pageRequest)).thenReturn(page);
+
+        Page<Contact> result = contactService.searchContacts("test@mail.com", "Ali", pageRequest);
+
+        assertNotNull(result);
+        verify(contactRepository, times(1)).findAll(pageRequest);
     }
 }
